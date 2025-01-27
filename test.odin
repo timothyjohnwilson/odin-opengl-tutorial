@@ -16,22 +16,26 @@ import gl "vendor:OpenGL"
 //shader source
     vertex_source :cstring =`
 	#version 330 core
-	out vec4 vertexColor;
     layout (location = 0) in vec3 aPos;
+	layout (location = 1) in vec3 aColor;
+
+	out vec3 ourColor;
+
     void main()
     {
-       gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);
-	   vertexColor = vec4(0.5, 0.0, 0.0, 1.0);
+       gl_Position = vec4(aPos, 1.0);
+	   ourColor = aColor;
     }`; 
 
     fragment_source:cstring = `
 	#version 330 core
+	in vec3 ourColor;
+	
     out vec4 FragColor;
-	uniform vec4 ourColor;
-	in vec4 vertexColor;
+
     void main()
     {
-       FragColor = ourColor;
+       FragColor = vec4(ourColor, 1.0);
     }`;
 
 
@@ -85,10 +89,17 @@ main :: proc() {
         return
     }
 
-    vertices :=[?]f32{0.0,0.5, 0.0,
-                  -0.5, -0.5, 0.0,
-                  0.5, -0.5, 0.0,
-             }
+    // vertices :=[?]f32{0.0,0.5, 0.0,
+    //               -0.5, -0.5, 0.0,
+    //               0.5, -0.5, 0.0,
+    //          }
+
+	vertices :=[?]f32{
+		// positions         // colors
+		0.5, -0.5, 0.0,  1.0, 0.0, 0.0,   // bottom right
+		-0.5, -0.5, 0.0,  0.0, 1.0, 0.0,   // bottom left
+		0.0,  0.5, 0.0,  0.0, 0.0, 1.0    // top 
+	};  
 
     VAO: u32;
     gl.GenVertexArrays(1,&VAO);
@@ -100,7 +111,14 @@ main :: proc() {
     
     gl.BindBuffer(gl.ARRAY_BUFFER,VBO)
     gl.BufferData(gl.ARRAY_BUFFER,size_of(vertices),&vertices,gl.STATIC_DRAW)
-    gl.VertexAttribPointer(0,3,gl.FLOAT,gl.FALSE, size_of(f32)*3, cast(uintptr)0)
+    // gl.VertexAttribPointer(0,3,gl.FLOAT,gl.FALSE, size_of(f32)*3, cast(uintptr)0)
+	// position attribute
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 6 * size_of(f32), cast(uintptr)0);
+	gl.EnableVertexAttribArray(0);
+	// color attribute
+	gl.VertexAttribPointer(1, 3, gl.FLOAT, gl.FALSE, 6 * size_of(f32), cast(uintptr)(3* size_of(f32)));
+	gl.EnableVertexAttribArray(1);
+
     gl.EnableVertexAttribArray(0)
     gl.UseProgram(shader_program);
     for (!glfw.WindowShouldClose(window_handle)){
