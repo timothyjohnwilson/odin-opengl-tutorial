@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 import "core:math"
+import "core:os"
 import glfw "vendor:glfw"
 import gl "vendor:OpenGL"
 
@@ -13,31 +14,37 @@ import gl "vendor:OpenGL"
     GL_VERSION_MAJOR :: 4
     GL_VERSION_MINOR :: 6
 
-//shader source
-    vertex_source :cstring =`
-	#version 330 core
-    layout (location = 0) in vec3 aPos;
-	layout (location = 1) in vec3 aColor;
+convert_to_cstring :: proc(str: []u8) -> cstring {
+    new_str := make([]u8, len(str) + 1)  
+    copy(new_str, str)  
+    new_str[len(str)] = 0 
+    return cast(cstring)&new_str[0] 
+}
 
-	out vec3 ourColor;
+Shader :: struct {
+    vertex_source: cstring,
+    fragment_source: cstring
+}
 
-    void main()
-    {
-       gl_Position = vec4(aPos, 1.0);
-	   ourColor = aColor;
-    }`; 
+read_shader :: proc(vertex_shader_path: string, fragment_shader_path: string) -> Shader {
 
-    fragment_source:cstring = `
-	#version 330 core
-	in vec3 ourColor;
-	
-    out vec4 FragColor;
+    new_shader: Shader;
 
-    void main()
-    {
-       FragColor = vec4(ourColor, 1.0);
-    }`;
+    vertex_source_data, vert_err := os.read_entire_file_from_filename_or_err(vertex_shader_path)
+    if vert_err != os.ERROR_NONE {
+        // handle error
+    }
+    new_shader.vertex_source = convert_to_cstring(vertex_source_data);
 
+    fragment_source_data, frag_err := os.read_entire_file_from_filename_or_err(fragment_shader_path)
+    if frag_err != os.ERROR_NONE {
+        // handle error
+    }
+
+    new_shader.fragment_source = convert_to_cstring(fragment_source_data);
+
+    return new_shader
+}
 
 
 main :: proc() {
@@ -67,8 +74,10 @@ main :: proc() {
     vertexShader = gl.CreateShader(gl.VERTEX_SHADER)
     fragmentShader = gl.CreateShader(gl.FRAGMENT_SHADER)
 
-    gl.ShaderSource(vertexShader,1,&vertex_source,nil)
-    gl.ShaderSource(fragmentShader,1,&fragment_source,nil)
+    test_shader: Shader = read_shader("shaders/test_vertex_shader.vs", "shaders/test_fragment_shader.fs")
+    gl.ShaderSource(vertexShader, 1, &test_shader.vertex_source, nil)
+    gl.ShaderSource(fragmentShader, 1, &test_shader.fragment_source, nil)
+
     gl.CompileShader(vertexShader)
     gl.CompileShader(fragmentShader)
     
@@ -79,6 +88,7 @@ main :: proc() {
     gl.AttachShader(shader_program,vertexShader);
     gl.AttachShader(shader_program,fragmentShader);
     gl.LinkProgram(shader_program);
+
     //Delete shaders after linking
     gl.DeleteShader(vertexShader)
     gl.DeleteShader(fragmentShader)
@@ -88,11 +98,6 @@ main :: proc() {
         fmt.eprintln("SHADER ERROR")
         return
     }
-
-    // vertices :=[?]f32{0.0,0.5, 0.0,
-    //               -0.5, -0.5, 0.0,
-    //               0.5, -0.5, 0.0,
-    //          }
 
 	vertices :=[?]f32{
 		// positions         // colors
