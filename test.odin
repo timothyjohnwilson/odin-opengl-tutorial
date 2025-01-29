@@ -3,6 +3,7 @@ package main
 import "core:fmt"
 import "core:math"
 import "core:os"
+import "core:strings"
 import gl "vendor:OpenGL"
 import glfw "vendor:glfw"
 
@@ -14,38 +15,18 @@ WINDOW_HEIGHT :: 480
 GL_VERSION_MAJOR :: 4
 GL_VERSION_MINOR :: 6
 
-convert_to_cstring :: proc(str: []u8) -> cstring {
-	new_str := make([]u8, len(str) + 1)
-	copy(new_str, str)
-	new_str[len(str)] = 0
-	return cast(cstring)&new_str[0]
-}
 
 Shader :: struct {
+	id:              u32,
 	vertex_source:   cstring,
 	fragment_source: cstring,
 }
 
-read_shader :: proc(vertex_shader_path: string, fragment_shader_path: string) -> Shader {
-
-	new_shader: Shader
-
-	vertex_source_data, vert_err := os.read_entire_file_from_filename_or_err(vertex_shader_path)
-	if vert_err != os.ERROR_NONE {
-		// handle error
-	}
-	new_shader.vertex_source = convert_to_cstring(vertex_source_data)
-
-	fragment_source_data, frag_err := os.read_entire_file_from_filename_or_err(
-		fragment_shader_path,
-	)
-	if frag_err != os.ERROR_NONE {
-		// handle error
-	}
-
-	new_shader.fragment_source = convert_to_cstring(fragment_source_data)
-
-	return new_shader
+Shader_4f :: struct {
+	x: f32,
+	y: f32,
+	z: f32,
+	w: f32,
 }
 
 
@@ -94,17 +75,16 @@ main :: proc() {
 
 
 	shader_success: i32
-	shader_program: u32
-	shader_program = gl.CreateProgram()
-	gl.AttachShader(shader_program, vertexShader)
-	gl.AttachShader(shader_program, fragmentShader)
-	gl.LinkProgram(shader_program)
+	test_shader.id = gl.CreateProgram()
+	gl.AttachShader(test_shader.id, vertexShader)
+	gl.AttachShader(test_shader.id, fragmentShader)
+	gl.LinkProgram(test_shader.id)
 
 	//Delete shaders after linking
 	gl.DeleteShader(vertexShader)
 	gl.DeleteShader(fragmentShader)
 
-	gl.GetProgramiv(shader_program, gl.LINK_STATUS, &shader_success)
+	gl.GetProgramiv(test_shader.id, gl.LINK_STATUS, &shader_success)
 	if (shader_success == 0) {
 		fmt.eprintln("SHADER ERROR")
 		return
@@ -113,19 +93,19 @@ main :: proc() {
 	vertices := [?]f32 {
 		// positions         // colors
 		0.5,
-		-0.5,
+		0.5,
 		0.0,
 		1.0,
 		0.0,
 		0.0, // bottom right
 		-0.5,
-		-0.5,
+		0.5,
 		0.0,
 		0.0,
 		1.0,
 		0.0, // bottom left
 		0.0,
-		0.5,
+		-0.5,
 		0.0,
 		0.0,
 		0.0,
@@ -137,15 +117,18 @@ main :: proc() {
 	gl.BindVertexArray(VAO)
 
 
+	// a VBO is a Vertex Buffer Object which is used to manage memory. the GPU can store shit tons of stuff
 	VBO: u32
 	gl.GenBuffers(1, &VBO)
 
 	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
 	gl.BufferData(gl.ARRAY_BUFFER, size_of(vertices), &vertices, gl.STATIC_DRAW)
-	// gl.VertexAttribPointer(0,3,gl.FLOAT,gl.FALSE, size_of(f32)*3, cast(uintptr)0)
+	// after this buffer data occurs, all buffer actions effect the currently bound VBO
+
 	// position attribute
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, 6 * size_of(f32), cast(uintptr)0)
 	gl.EnableVertexAttribArray(0)
+
 	// color attribute
 	gl.VertexAttribPointer(
 		1,
@@ -158,19 +141,21 @@ main :: proc() {
 	gl.EnableVertexAttribArray(1)
 
 	gl.EnableVertexAttribArray(0)
-	gl.UseProgram(shader_program)
 	for (!glfw.WindowShouldClose(window_handle)) {
 		process_input(window_handle)
 		glfw.PollEvents()
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
-		time_value := glfw.GetTime()
-		green_value := cast(f32)((math.sin(time_value) / 2.0) + 0.5)
-		vertex_color_location := gl.GetUniformLocation(shader_program, "ourColor")
-		gl.UseProgram(shader_program)
 
-		gl.Uniform4f(vertex_color_location, 0.0, green_value, 0.0, 1.0)
+		use_shader(test_shader.id)
+
+		time_value := glfw.GetTime()
+		set_shader_float(
+			test_shader.id,
+			"horizontalOffset",
+			cast(f32)((math.sin(time_value) / 2.0)),
+		)
 
 		gl.BindVertexArray(VAO)
 		gl.DrawArrays(gl.TRIANGLES, 0, 3)
@@ -184,7 +169,6 @@ frame_buffer_size_callback :: proc "c" (window: glfw.WindowHandle, width, height
 	gl.Viewport(0, 0, width, height)
 }
 
-
 process_input :: proc(window: glfw.WindowHandle) {
 	if (glfw.GetKey(window, glfw.KEY_ESCAPE) == glfw.PRESS) {
 		glfw.SetWindowShouldClose(window, true)
@@ -196,4 +180,54 @@ process_input :: proc(window: glfw.WindowHandle) {
 	if (glfw.GetKey(window, glfw.KEY_F) == glfw.PRESS) {
 		gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
 	}
+}
+
+use_shader :: proc(id: u32) {
+	gl.UseProgram(id)
+}
+
+set_shader_bool :: proc(id: u32, name: string, value: bool) {
+	uniform_name := strings.clone_to_cstring(name)
+
+	gl.Uniform1i(gl.GetUniformLocation(id, uniform_name), cast(i32)value)
+}
+
+set_shader_int :: proc(id: u32, name: string, value: i32) {
+	uniform_name := strings.clone_to_cstring(name)
+	gl.Uniform1i(gl.GetUniformLocation(id, uniform_name), value)
+}
+
+set_shader_float :: proc(id: u32, name: string, value: f32) {
+	uniform_name := strings.clone_to_cstring(name)
+	gl.Uniform1f(gl.GetUniformLocation(id, uniform_name), value)
+}
+
+set_shader_4f :: proc(id: u32, name: string, value: Shader_4f) {
+	uniform_name := strings.clone_to_cstring(name)
+	gl.Uniform4f(gl.GetUniformLocation(id, uniform_name), value.x, value.y, value.z, value.w)
+}
+
+read_shader :: proc(vertex_shader_path: string, fragment_shader_path: string) -> Shader {
+	new_shader: Shader
+
+	vertex_source_data, vert_err := os.read_entire_file_from_filename_or_err(vertex_shader_path)
+	if vert_err != os.ERROR_NONE {
+		// handle error
+	}
+	new_shader.vertex_source = convert_to_cstring(vertex_source_data)
+
+	fragment_source_data, frag_err := os.read_entire_file_from_filename_or_err(
+		fragment_shader_path,
+	)
+	if frag_err != os.ERROR_NONE {
+		// handle error
+	}
+
+	new_shader.fragment_source = convert_to_cstring(fragment_source_data)
+
+	return new_shader
+}
+
+convert_to_cstring :: proc(str: []u8) -> cstring {
+	return cstring(raw_data(str))
 }
