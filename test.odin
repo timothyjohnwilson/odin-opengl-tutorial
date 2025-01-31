@@ -245,16 +245,6 @@ main :: proc() {
 
 	stbi.image_free(data)
 
-
-	// vec: linalg.Vector4f32 = {1.0, 0.0, 0.0, 1.0}
-	// trans := linalg.MATRIX4F32_IDENTITY * linalg.matrix4_translate_f32({1.0, 1.0, 0.0})
-	// vec = linalg.matrix_mul_vector(trans, vec)
-	// fmt.println(vec)
-
-	trans := linalg.MATRIX4F32_IDENTITY
-	trans = linalg.matrix4_rotate_f32(90.0, {0.0, 0.0, 1.0}) * trans
-	trans = linalg.matrix4_scale_f32({0.5, 0.5, 0.5}) * trans
-
 	game_state: GameState = {
 		opacity = 0.2,
 	}
@@ -262,14 +252,20 @@ main :: proc() {
 	use_shader(our_shader.id)
 	set_shader_int(our_shader.id, "texture1", 0)
 	set_shader_int(our_shader.id, "texture2", 1)
-	set_shader_float(our_shader.id, "opacity", game_state.opacity)
-
-	flattened_translation := linalg.matrix_flatten(trans)
-	set_shader_matrix4(our_shader.id, "transform", &flattened_translation[0])
 
 	for (!glfw.WindowShouldClose(window_handle)) {
 		process_input(window_handle, &game_state)
 		set_shader_float(our_shader.id, "opacity", game_state.opacity)
+
+
+		trans :=
+			linalg.matrix4_translate_f32({0.5, -0.5, 0.0}) *
+			linalg.matrix4_rotate_f32(cast(f32)glfw.GetTime(), {0.0, 0.0, 1.0})
+
+
+		flattened_translation := linalg.matrix_flatten(trans)
+
+		set_shader_matrix4(our_shader.id, "transform", &flattened_translation[0])
 
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
