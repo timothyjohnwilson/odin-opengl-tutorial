@@ -257,7 +257,7 @@ main :: proc() {
 		process_input(window_handle, &game_state)
 		set_shader_float(our_shader.id, "opacity", game_state.opacity)
 
-
+		// THE ORDER MATTERS!!!!
 		trans :=
 			linalg.matrix4_translate_f32({0.5, -0.5, 0.0}) *
 			linalg.matrix4_rotate_f32(cast(f32)glfw.GetTime(), {0.0, 0.0, 1.0})
@@ -269,6 +269,24 @@ main :: proc() {
 
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
+
+		gl.ActiveTexture(gl.TEXTURE0)
+		gl.BindTexture(gl.TEXTURE_2D, texture1)
+		gl.ActiveTexture(gl.TEXTURE1)
+		gl.BindTexture(gl.TEXTURE_2D, texture2)
+
+		use_shader(our_shader.id)
+		gl.BindVertexArray(VAO)
+		gl.DrawElements(gl.TRIANGLES, len(indices), gl.UNSIGNED_INT, nil)
+
+		trans =
+			linalg.matrix4_translate_f32({-0.5, 0.5, 0.0}) *
+			linalg.matrix4_scale_f32({linalg.sin(cast(f32)glfw.GetTime()), linalg.sin(cast(f32)glfw.GetTime()), 0.0})
+
+
+		flattened_translation = linalg.matrix_flatten(trans)
+
+		set_shader_matrix4(our_shader.id, "transform", &flattened_translation[0])
 
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture1)
