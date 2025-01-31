@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 import "core:math"
+import linalg "core:math/linalg"
 import "core:os"
 import "core:strings"
 import gl "vendor:OpenGL"
@@ -28,6 +29,12 @@ Shader_4f :: struct {
 	y: f32,
 	z: f32,
 	w: f32,
+}
+
+GameState :: struct {
+	opacity:         f32,
+	up_is_pressed:   b32,
+	down_is_pressed: b32,
 }
 
 
@@ -86,6 +93,10 @@ main :: proc() {
 		1.0,
 		1.0,
 
+		// top right inner texture coordinate
+		2.0,
+		2.0,
+
 		// bottom right position
 		0.5,
 		-0.5,
@@ -98,6 +109,10 @@ main :: proc() {
 
 		// bottom right texture coordinate
 		1.0,
+		0.0,
+
+		// bottom right inner texture coordinate
+		2.0,
 		0.0,
 
 		// bottom left position
@@ -114,6 +129,10 @@ main :: proc() {
 		0.0,
 		0.0,
 
+		// bottom left inner texture coordinate
+		0.0,
+		0.0,
+
 		// top left position
 		-0.5,
 		0.5,
@@ -127,6 +146,10 @@ main :: proc() {
 		// top left texture coordinate
 		0.0,
 		1.0,
+
+		// top left inner texture coordinate
+		0.0,
+		2.0,
 	}
 
 	indices := [?]u32 {
@@ -157,7 +180,7 @@ main :: proc() {
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, size_of(indices), &indices, gl.STATIC_DRAW)
 
-	total_size:i32 = 8 * size_of(f32)
+	total_size: i32 = 10 * size_of(f32)
 
 	// position attribute
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, total_size, cast(uintptr)0)
@@ -171,11 +194,15 @@ main :: proc() {
 	gl.VertexAttribPointer(2, 2, gl.FLOAT, gl.FALSE, total_size, cast(uintptr)(6 * size_of(f32)))
 	gl.EnableVertexAttribArray(2)
 
-	// Load the textures
-	texture: u32
+	// inner texture position
+	gl.VertexAttribPointer(3, 2, gl.FLOAT, gl.FALSE, total_size, cast(uintptr)(8 * size_of(f32)))
+	gl.EnableVertexAttribArray(3)
 
-	gl.GenTextures(1, &texture)
-	gl.BindTexture(gl.TEXTURE_2D, texture)
+	// Load the first texture
+	texture1: u32
+
+	gl.GenTextures(1, &texture1)
+	gl.BindTexture(gl.TEXTURE_2D, texture1)
 
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
@@ -195,19 +222,62 @@ main :: proc() {
 
 	stbi.image_free(data)
 
-	el_index := 0
+	// Texture 2
+	texture2: u32
+	gl.GenTextures(1, &texture2)
+	gl.BindTexture(gl.TEXTURE_2D, texture2)
+
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
+
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+
+	stbi.set_flip_vertically_on_load(cast(i32)1)
+	data = stbi.load("textures/awesomeface.png", &width, &height, &nrChannels, 0)
+	if data == nil {
+		fmt.eprintln(stbi.failure_reason())
+		return
+	}
+
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data)
+	gl.GenerateMipmap(gl.TEXTURE_2D)
+
+	stbi.image_free(data)
+
+
+	// vec: linalg.Vector4f32 = {1.0, 0.0, 0.0, 1.0}
+	// trans := linalg.MATRIX4F32_IDENTITY * linalg.matrix4_translate_f32({1.0, 1.0, 0.0})
+	// vec = linalg.matrix_mul_vector(trans, vec)
+	// fmt.println(vec)
+
+	trans := linalg.MATRIX4F32_IDENTITY
+	trans = linalg.matrix4_rotate_f32(90.0, {0.0, 0.0, 1.0}) * trans
+	trans = linalg.matrix4_scale_f32({0.5, 0.5, 0.5}) * trans
+
+	game_state: GameState = {
+		opacity = 0.2,
+	}
 
 	use_shader(our_shader.id)
-	set_shader_int(our_shader.id, "ourTexture", 0)
+	set_shader_int(our_shader.id, "texture1", 0)
+	set_shader_int(our_shader.id, "texture2", 1)
+	set_shader_float(our_shader.id, "opacity", game_state.opacity)
+
+	flattened_translation := linalg.matrix_flatten(trans)
+	set_shader_matrix4(our_shader.id, "transform", &flattened_translation[0])
 
 	for (!glfw.WindowShouldClose(window_handle)) {
-		process_input(window_handle)
+		process_input(window_handle, &game_state)
+		set_shader_float(our_shader.id, "opacity", game_state.opacity)
 
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, texture)
+		gl.BindTexture(gl.TEXTURE_2D, texture1)
+		gl.ActiveTexture(gl.TEXTURE1)
+		gl.BindTexture(gl.TEXTURE_2D, texture2)
 
 		use_shader(our_shader.id)
 		gl.BindVertexArray(VAO)
@@ -224,7 +294,7 @@ frame_buffer_size_callback :: proc "c" (window: glfw.WindowHandle, width, height
 	gl.Viewport(0, 0, width, height)
 }
 
-process_input :: proc(window: glfw.WindowHandle) {
+process_input :: proc(window: glfw.WindowHandle, game_state: ^GameState) {
 	if (glfw.GetKey(window, glfw.KEY_ESCAPE) == glfw.PRESS) {
 		glfw.SetWindowShouldClose(window, true)
 	}
@@ -234,6 +304,26 @@ process_input :: proc(window: glfw.WindowHandle) {
 
 	if (glfw.GetKey(window, glfw.KEY_F) == glfw.PRESS) {
 		gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
+	}
+
+	if ((glfw.GetKey(window, glfw.KEY_UP) == glfw.PRESS) && (!game_state.up_is_pressed)) {
+		game_state.opacity += 0.1
+		if (game_state.opacity > 1.0) {
+			game_state.opacity = 1
+		}
+		game_state.up_is_pressed = true
+	} else if (glfw.GetKey(window, glfw.KEY_UP) == glfw.RELEASE) {
+		game_state.up_is_pressed = false
+	}
+
+	if ((glfw.GetKey(window, glfw.KEY_DOWN) == glfw.PRESS) && (!game_state.down_is_pressed)) {
+		game_state.opacity -= 0.1
+		if (game_state.opacity < 0.0) {
+			game_state.opacity = 0
+		}
+		game_state.down_is_pressed = true
+	} else if (glfw.GetKey(window, glfw.KEY_DOWN) == glfw.RELEASE) {
+		game_state.down_is_pressed = false
 	}
 }
 
@@ -260,6 +350,11 @@ set_shader_float :: proc(id: u32, name: string, value: f32) {
 set_shader_4f :: proc(id: u32, name: string, value: Shader_4f) {
 	uniform_name := strings.clone_to_cstring(name)
 	gl.Uniform4f(gl.GetUniformLocation(id, uniform_name), value.x, value.y, value.z, value.w)
+}
+
+set_shader_matrix4 :: proc(id: u32, name: string, value: [^]f32) {
+	uniform_name := strings.clone_to_cstring(name)
+	gl.UniformMatrix4fv(gl.GetUniformLocation(id, uniform_name), 1, gl.FALSE, value)
 }
 
 load_and_compile_shader :: proc(
