@@ -79,77 +79,186 @@ main :: proc() {
 	}
 
 	vertices := [?]f32 {
-		// top right position
-		0.5,
-		0.5,
-		0.0,
-
-		// top right color
-		1.0,
-		0.0,
-		0.0,
-
-		// top right texture coordinate
-		1.0,
-		1.0,
-
-		// top right inner texture coordinate
-		2.0,
-		2.0,
-
-		// bottom right position
-		0.5,
 		-0.5,
-		0.0,
-
-		// bottom right color
-		0.0,
-		1.0,
-		0.0,
-
-		// bottom right texture coordinate
-		1.0,
-		0.0,
-
-		// bottom right inner texture coordinate
-		2.0,
-		0.0,
-
-		// bottom left position
 		-0.5,
 		-0.5,
 		0.0,
-
-		// bottom left color
 		0.0,
+		0.5,
+		-0.5,
+		-0.5,
+		1.0,
+		0.0,
+		0.5,
+		0.5,
+		-0.5,
+		1.0,
+		1.0,
+		0.5,
+		0.5,
+		-0.5,
+		1.0,
+		1.0,
+		-0.5,
+		0.5,
+		-0.5,
 		0.0,
 		1.0,
-
-		//bottom left texture coordinate
+		-0.5,
+		-0.5,
+		-0.5,
 		0.0,
 		0.0,
-
-		// bottom left inner texture coordinate
-		0.0,
-		0.0,
-
-		// top left position
+		-0.5,
 		-0.5,
 		0.5,
 		0.0,
-
-		// top left color
-		1.0,
+		0.0,
+		0.5,
+		-0.5,
+		0.5,
 		1.0,
 		0.0,
-
-		// top left texture coordinate
+		0.5,
+		0.5,
+		0.5,
+		1.0,
+		1.0,
+		0.5,
+		0.5,
+		0.5,
+		1.0,
+		1.0,
+		-0.5,
+		0.5,
+		0.5,
 		0.0,
 		1.0,
-
-		// top left inner texture coordinate
+		-0.5,
+		-0.5,
+		0.5,
 		0.0,
-		2.0,
+		0.0,
+		-0.5,
+		0.5,
+		0.5,
+		1.0,
+		0.0,
+		-0.5,
+		0.5,
+		-0.5,
+		1.0,
+		1.0,
+		-0.5,
+		-0.5,
+		-0.5,
+		0.0,
+		1.0,
+		-0.5,
+		-0.5,
+		-0.5,
+		0.0,
+		1.0,
+		-0.5,
+		-0.5,
+		0.5,
+		0.0,
+		0.0,
+		-0.5,
+		0.5,
+		0.5,
+		1.0,
+		0.0,
+		0.5,
+		0.5,
+		0.5,
+		1.0,
+		0.0,
+		0.5,
+		0.5,
+		-0.5,
+		1.0,
+		1.0,
+		0.5,
+		-0.5,
+		-0.5,
+		0.0,
+		1.0,
+		0.5,
+		-0.5,
+		-0.5,
+		0.0,
+		1.0,
+		0.5,
+		-0.5,
+		0.5,
+		0.0,
+		0.0,
+		0.5,
+		0.5,
+		0.5,
+		1.0,
+		0.0,
+		-0.5,
+		-0.5,
+		-0.5,
+		0.0,
+		1.0,
+		0.5,
+		-0.5,
+		-0.5,
+		1.0,
+		1.0,
+		0.5,
+		-0.5,
+		0.5,
+		1.0,
+		0.0,
+		0.5,
+		-0.5,
+		0.5,
+		1.0,
+		0.0,
+		-0.5,
+		-0.5,
+		0.5,
+		0.0,
+		0.0,
+		-0.5,
+		-0.5,
+		-0.5,
+		0.0,
+		1.0,
+		-0.5,
+		0.5,
+		-0.5,
+		0.0,
+		1.0,
+		0.5,
+		0.5,
+		-0.5,
+		1.0,
+		1.0,
+		0.5,
+		0.5,
+		0.5,
+		1.0,
+		0.0,
+		0.5,
+		0.5,
+		0.5,
+		1.0,
+		0.0,
+		-0.5,
+		0.5,
+		0.5,
+		0.0,
+		0.0,
+		-0.5,
+		0.5,
+		-0.5,
+		0.0,
+		1.0,
 	}
 
 	indices := [?]u32 {
@@ -180,23 +289,15 @@ main :: proc() {
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, size_of(indices), &indices, gl.STATIC_DRAW)
 
-	total_size: i32 = 10 * size_of(f32)
+	total_size: i32 = 5 * size_of(f32)
 
 	// position attribute
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, gl.FALSE, total_size, cast(uintptr)0)
 	gl.EnableVertexAttribArray(0)
 
-	// color attribute
-	gl.VertexAttribPointer(1, 3, gl.FLOAT, gl.FALSE, total_size, cast(uintptr)(3 * size_of(f32)))
-	gl.EnableVertexAttribArray(1)
-
 	// texture position
-	gl.VertexAttribPointer(2, 2, gl.FLOAT, gl.FALSE, total_size, cast(uintptr)(6 * size_of(f32)))
-	gl.EnableVertexAttribArray(2)
-
-	// inner texture position
-	gl.VertexAttribPointer(3, 2, gl.FLOAT, gl.FALSE, total_size, cast(uintptr)(8 * size_of(f32)))
-	gl.EnableVertexAttribArray(3)
+	gl.VertexAttribPointer(1, 2, gl.FLOAT, gl.FALSE, total_size, cast(uintptr)(3 * size_of(f32)))
+	gl.EnableVertexAttribArray(1)
 
 	// Load the first texture
 	texture1: u32
@@ -253,22 +354,38 @@ main :: proc() {
 	set_shader_int(our_shader.id, "texture1", 0)
 	set_shader_int(our_shader.id, "texture2", 1)
 
+	cubePositions := [?][3]f32 {
+		{0.0, 0.0, 0.0},
+		{2.0, 5.0, -15.0},
+		{-1.5, -2.2, -2.5},
+		{-3.8, -2.0, -12.3},
+		{2.4, -0.4, -3.5},
+		{-1.7, 3.0, -7.5},
+		{1.3, -2.0, -2.5},
+		{1.5, 2.0, -2.5},
+		{1.5, 0.2, -1.5},
+		{-1.3, 1.0, -1.5},
+	}
+
+	gl.Enable(gl.DEPTH_TEST)
 	for (!glfw.WindowShouldClose(window_handle)) {
+		width, height := glfw.GetWindowSize(window_handle)
 		process_input(window_handle, &game_state)
 		set_shader_float(our_shader.id, "opacity", game_state.opacity)
 
-		// THE ORDER MATTERS!!!!
-		trans :=
-			linalg.matrix4_translate_f32({0.5, -0.5, 0.0}) *
-			linalg.matrix4_rotate_f32(cast(f32)glfw.GetTime(), {0.0, 0.0, 1.0})
+		view := linalg.matrix4_translate_f32({0.0, 0.0, -3.0})
+		projection := linalg.matrix4_perspective_f32(
+			f32(linalg.to_radians(45.0)),
+			f32(width) / f32(height), // window width & window height to keep everything sized correctly
+			0.1,
+			100.0,
+		)
 
-
-		flattened_translation := linalg.matrix_flatten(trans)
-
-		set_shader_matrix4(our_shader.id, "transform", &flattened_translation[0])
+		set_shader_matrix4(our_shader.id, "view", &view)
+		set_shader_matrix4(our_shader.id, "projection", &projection)
 
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
-		gl.Clear(gl.COLOR_BUFFER_BIT)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture1)
@@ -277,25 +394,24 @@ main :: proc() {
 
 		use_shader(our_shader.id)
 		gl.BindVertexArray(VAO)
-		gl.DrawElements(gl.TRIANGLES, len(indices), gl.UNSIGNED_INT, nil)
 
-		trans =
-			linalg.matrix4_translate_f32({-0.5, 0.5, 0.0}) *
-			linalg.matrix4_scale_f32({linalg.sin(cast(f32)glfw.GetTime()), linalg.sin(cast(f32)glfw.GetTime()), 0.0})
+		time_modifier := glfw.GetTime()
 
+		for i := 0; i < 10; i += 1 {
+			model := linalg.MATRIX4F32_IDENTITY
+			model *= linalg.matrix4_translate_f32(cubePositions[i])
+			angle := f32(0)
+			if i % 3 == 0 {
+				angle = f32(time_modifier)
+			} else {
+				angle = cast(f32)(20.0 * i)
+			}
+			model *= linalg.matrix4_rotate_f32(angle, {1.0, 0.3, 0.5})
 
-		flattened_translation = linalg.matrix_flatten(trans)
+			set_shader_matrix4(our_shader.id, "model", &model)
+			gl.DrawArrays(gl.TRIANGLES, 0, 36)
+		}
 
-		set_shader_matrix4(our_shader.id, "transform", &flattened_translation[0])
-
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, texture1)
-		gl.ActiveTexture(gl.TEXTURE1)
-		gl.BindTexture(gl.TEXTURE_2D, texture2)
-
-		use_shader(our_shader.id)
-		gl.BindVertexArray(VAO)
-		gl.DrawElements(gl.TRIANGLES, len(indices), gl.UNSIGNED_INT, nil)
 
 		res := gl.GetError()
 
@@ -366,9 +482,9 @@ set_shader_4f :: proc(id: u32, name: string, value: Shader_4f) {
 	gl.Uniform4f(gl.GetUniformLocation(id, uniform_name), value.x, value.y, value.z, value.w)
 }
 
-set_shader_matrix4 :: proc(id: u32, name: string, value: [^]f32) {
+set_shader_matrix4 :: proc(id: u32, name: string, value: ^matrix[4, 4]f32) {
 	uniform_name := strings.clone_to_cstring(name)
-	gl.UniformMatrix4fv(gl.GetUniformLocation(id, uniform_name), 1, gl.FALSE, value)
+	gl.UniformMatrix4fv(gl.GetUniformLocation(id, uniform_name), 1, gl.FALSE, &value[0][0])
 }
 
 load_and_compile_shader :: proc(
