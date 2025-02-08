@@ -23,24 +23,37 @@ Shader :: struct {
 	vertex_source:   cstring,
 	fragment_source: cstring,
 }
-
-Shader_4f :: struct {
-	x: f32,
-	y: f32,
-	z: f32,
-	w: f32,
-}
-
 GameState :: struct {
 	opacity:         f32,
 	up_is_pressed:   b32,
 	down_is_pressed: b32,
+	camera_speed:    f32,
+	camera_delta:    f32,
 	camera_pos:      [3]f32,
 	camera_front:    [3]f32,
 	camera_up:       [3]f32,
-	camera_speed:    f32,
-	camera_delta:    f32,
+	direction:       [3]f32,
+	mouse_xpos:      f32,
+	mouse_ypos:      f32,
+	mouse_yaw:       f32,
+	mouse_pitch:     f32,
+	sensitivity:     f32,
 }
+
+game_state: GameState = {
+	opacity      = 0.2,
+	camera_pos   = {0.0, 0.0, 3.0},
+	camera_front = {0.0, 0.0, -1.0},
+	camera_up    = {0.0, 1.0, 0.0},
+	camera_speed = 1,
+	mouse_xpos   = f32(WINDOW_WIDTH / 2),
+	mouse_ypos   = f32(WINDOW_HEIGHT / 2),
+	mouse_yaw    = -90.0,
+	mouse_pitch  = 0.0,
+	sensitivity  = 0.2,
+}
+
+first_mouse: b32 = true
 
 
 main :: proc() {
@@ -64,6 +77,7 @@ main :: proc() {
 		return
 	}
 
+	glfw.SetInputMode(window_handle, glfw.CURSOR, glfw.CURSOR_DISABLED)
 	glfw.MakeContextCurrent(window_handle)
 	glfw.SwapInterval(0)
 	glfw.SetFramebufferSizeCallback(window_handle, frame_buffer_size_callback)
@@ -328,7 +342,7 @@ main :: proc() {
 
 	stbi.image_free(data)
 
-	// Texture 2
+	// Load the second texture
 	texture2: u32
 	gl.GenTextures(1, &texture2)
 	gl.BindTexture(gl.TEXTURE_2D, texture2)
@@ -351,14 +365,6 @@ main :: proc() {
 
 	stbi.image_free(data)
 
-	game_state: GameState = {
-		opacity      = 0.2,
-		camera_pos   = {0.0, 0.0, 3.0},
-		camera_front = {0.0, 0.0, -1.0},
-		camera_up    = {0.0, 1.0, 0.0},
-		camera_speed = 1,
-	}
-
 	use_shader(our_shader.id)
 	set_shader_int(our_shader.id, "texture1", 0)
 	set_shader_int(our_shader.id, "texture2", 1)
@@ -379,19 +385,28 @@ main :: proc() {
 	gl.Enable(gl.DEPTH_TEST)
 
 
-	delta_time: f32 = 0.0
 	last_frame: f32 = 0.0
+
+	glfw.SetCursorPosCallback(window_handle, cast(glfw.CursorPosProc)process_mouse_input)
 
 	for (!glfw.WindowShouldClose(window_handle)) {
 		current_frame := f32(glfw.GetTime())
-		delta_time = current_frame - last_frame
+		game_state.camera_delta = current_frame - last_frame
 		last_frame = current_frame
-
-		game_state.camera_delta = delta_time
 
 		width, height := glfw.GetWindowSize(window_handle)
 		process_input(window_handle, &game_state)
 		set_shader_float(our_shader.id, "opacity", game_state.opacity)
+
+		game_state.direction.x =
+			linalg.cos(linalg.to_radians(game_state.mouse_yaw)) *
+			linalg.cos(linalg.to_radians(game_state.mouse_pitch))
+		game_state.direction.y = linalg.sin(linalg.to_radians(game_state.mouse_pitch))
+		game_state.direction.z =
+			linalg.sin(linalg.to_radians(game_state.mouse_yaw)) *
+			linalg.cos(linalg.to_radians(game_state.mouse_pitch))
+
+		game_state.camera_front = linalg.normalize(game_state.direction)
 
 		view := linalg.matrix4_look_at_f32(
 			game_state.camera_pos,
@@ -444,6 +459,27 @@ main :: proc() {
 		glfw.SwapBuffers(window_handle)
 		glfw.PollEvents()
 	}
+}
+
+process_mouse_input :: proc(window: glfw.WindowHandle, xpos64: f64, ypos64: f64) {
+	xpos := f32(xpos64)
+	ypos := f32(ypos64)
+	if first_mouse == true // initially set to true
+	{
+		game_state.mouse_xpos = xpos
+		game_state.mouse_ypos = ypos
+		first_mouse = false
+	}
+
+	xoffset := xpos - game_state.mouse_xpos
+	yoffset := game_state.mouse_ypos - ypos
+	game_state.mouse_xpos = xpos
+	game_state.mouse_ypos = ypos
+
+	game_state.mouse_yaw += (xoffset * game_state.sensitivity)
+	game_state.mouse_pitch += (yoffset * game_state.sensitivity)
+
+	game_state.mouse_pitch = linalg.clamp(game_state.mouse_pitch, -89.0, 89.0)
 }
 
 frame_buffer_size_callback :: proc "c" (window: glfw.WindowHandle, width, height: i32) {
@@ -500,11 +536,6 @@ set_shader_int :: proc(id: u32, name: string, value: i32) {
 set_shader_float :: proc(id: u32, name: string, value: f32) {
 	uniform_name := strings.clone_to_cstring(name)
 	gl.Uniform1f(gl.GetUniformLocation(id, uniform_name), value)
-}
-
-set_shader_4f :: proc(id: u32, name: string, value: Shader_4f) {
-	uniform_name := strings.clone_to_cstring(name)
-	gl.Uniform4f(gl.GetUniformLocation(id, uniform_name), value.x, value.y, value.z, value.w)
 }
 
 set_shader_matrix4 :: proc(id: u32, name: string, value: ^matrix[4, 4]f32) {
