@@ -35,6 +35,11 @@ GameState :: struct {
 	opacity:         f32,
 	up_is_pressed:   b32,
 	down_is_pressed: b32,
+	camera_pos:      [3]f32,
+	camera_front:    [3]f32,
+	camera_up:       [3]f32,
+	camera_speed:    f32,
+	camera_delta:    f32,
 }
 
 
@@ -347,7 +352,11 @@ main :: proc() {
 	stbi.image_free(data)
 
 	game_state: GameState = {
-		opacity = 0.2,
+		opacity      = 0.2,
+		camera_pos   = {0.0, 0.0, 3.0},
+		camera_front = {0.0, 0.0, -1.0},
+		camera_up    = {0.0, 1.0, 0.0},
+		camera_speed = 1,
 	}
 
 	use_shader(our_shader.id)
@@ -368,20 +377,37 @@ main :: proc() {
 	}
 
 	gl.Enable(gl.DEPTH_TEST)
+
+
+	delta_time: f32 = 0.0
+	last_frame: f32 = 0.0
+
 	for (!glfw.WindowShouldClose(window_handle)) {
+		current_frame := f32(glfw.GetTime())
+		delta_time = current_frame - last_frame
+		last_frame = current_frame
+
+		game_state.camera_delta = delta_time
+
 		width, height := glfw.GetWindowSize(window_handle)
 		process_input(window_handle, &game_state)
 		set_shader_float(our_shader.id, "opacity", game_state.opacity)
 
-		view := linalg.matrix4_translate_f32({0.0, 0.0, -3.0})
+		view := linalg.matrix4_look_at_f32(
+			game_state.camera_pos,
+			game_state.camera_pos + game_state.camera_front,
+			game_state.camera_up,
+		)
+
+		set_shader_matrix4(our_shader.id, "view", &view)
+
+
 		projection := linalg.matrix4_perspective_f32(
 			f32(linalg.to_radians(45.0)),
 			f32(width) / f32(height), // window width & window height to keep everything sized correctly
 			0.1,
 			100.0,
 		)
-
-		set_shader_matrix4(our_shader.id, "view", &view)
 		set_shader_matrix4(our_shader.id, "projection", &projection)
 
 		gl.ClearColor(0.2, 0.3, 0.3, 1.0)
@@ -425,36 +451,35 @@ frame_buffer_size_callback :: proc "c" (window: glfw.WindowHandle, width, height
 }
 
 process_input :: proc(window: glfw.WindowHandle, game_state: ^GameState) {
+	// Kill Window with Escape
 	if (glfw.GetKey(window, glfw.KEY_ESCAPE) == glfw.PRESS) {
 		glfw.SetWindowShouldClose(window, true)
 	}
+
+	// Camera Movement
 	if (glfw.GetKey(window, glfw.KEY_W) == glfw.PRESS) {
-		gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
+		game_state.camera_pos +=
+			(game_state.camera_speed * game_state.camera_delta) * game_state.camera_front
+	}
+	if (glfw.GetKey(window, glfw.KEY_S) == glfw.PRESS) {
+		game_state.camera_pos -=
+			(game_state.camera_speed * game_state.camera_delta) * game_state.camera_front
+	}
+	if (glfw.GetKey(window, glfw.KEY_A) == glfw.PRESS) {
+		game_state.camera_pos -=
+			linalg.vector_normalize(
+				linalg.vector_cross3(game_state.camera_front, game_state.camera_up),
+			) *
+			(game_state.camera_speed * game_state.camera_delta)
+	}
+	if (glfw.GetKey(window, glfw.KEY_D) == glfw.PRESS) {
+		game_state.camera_pos +=
+			linalg.vector_normalize(
+				linalg.vector_cross3(game_state.camera_front, game_state.camera_up),
+			) *
+			(game_state.camera_speed * game_state.camera_delta)
 	}
 
-	if (glfw.GetKey(window, glfw.KEY_F) == glfw.PRESS) {
-		gl.PolygonMode(gl.FRONT_AND_BACK, gl.FILL)
-	}
-
-	if ((glfw.GetKey(window, glfw.KEY_UP) == glfw.PRESS) && (!game_state.up_is_pressed)) {
-		game_state.opacity += 0.1
-		if (game_state.opacity > 1.0) {
-			game_state.opacity = 1
-		}
-		game_state.up_is_pressed = true
-	} else if (glfw.GetKey(window, glfw.KEY_UP) == glfw.RELEASE) {
-		game_state.up_is_pressed = false
-	}
-
-	if ((glfw.GetKey(window, glfw.KEY_DOWN) == glfw.PRESS) && (!game_state.down_is_pressed)) {
-		game_state.opacity -= 0.1
-		if (game_state.opacity < 0.0) {
-			game_state.opacity = 0
-		}
-		game_state.down_is_pressed = true
-	} else if (glfw.GetKey(window, glfw.KEY_DOWN) == glfw.RELEASE) {
-		game_state.down_is_pressed = false
-	}
 }
 
 use_shader :: proc(id: u32) {
