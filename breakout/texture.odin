@@ -19,7 +19,7 @@ Texture2D :: struct {
 // "textures/container.jpg"
 generate_texture :: proc(texture: ^Texture2D, width: i32, height: i32, data: [^]u8) {
 	gl.GenTextures(1, &texture.id)
-	gl.BindTexture(gl.TEXTURE_2D, texture.id)
+	bind_texture(texture)
 
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
@@ -43,4 +43,9 @@ generate_texture :: proc(texture: ^Texture2D, width: i32, height: i32, data: [^]
 
 	// Unbind
 	gl.BindTexture(gl.TEXTURE_2D, 0)
+}
+
+
+bind_texture :: proc(texture: ^Texture2D) {
+	gl.BindTexture(gl.TEXTURE_2D, texture.id)
 }

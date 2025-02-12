@@ -17,7 +17,7 @@ import stbi "vendor:stb/image"
 shaders := make(map[string]Shader)
 textures := make(map[string]Texture2D)
 
-load_shader :: proc(
+vert_frag_geo_shader :: proc(
 	vertex_shader_path: ^string,
 	fragment_shader_path: ^string,
 	geometry_shader_path: ^string,
@@ -31,6 +31,22 @@ load_shader :: proc(
 
 	shaders[name] = new_shader
 	return shaders[name]
+}
+
+vert_frag_shader :: proc(
+	vertex_shader_path: ^string,
+	fragment_shader_path: ^string,
+	name: string,
+) -> Shader {
+	new_shader, error_code := load_shader_from_file(vertex_shader_path, fragment_shader_path)
+
+	shaders[name] = new_shader
+	return shaders[name]
+}
+
+load_shader :: proc {
+	vert_frag_geo_shader,
+	vert_frag_shader,
 }
 
 get_shader :: proc(name: string) -> Shader {
@@ -58,10 +74,9 @@ clear :: proc() {
 	}
 }
 
-load_shader_from_file :: proc(
+load_vert_frag_shader_from_file :: proc(
 	vertex_shader_path: ^string,
 	fragment_shader_path: ^string,
-	geometry_shader_path: ^string = nil,
 ) -> (
 	Shader,
 	i32,
@@ -71,31 +86,60 @@ load_shader_from_file :: proc(
 
 	vertex_code, vert_err := os.read_entire_file_from_filename_or_err(vertex_shader_path^)
 	if vert_err != os.ERROR_NONE {
-		fmt.eprintln("SHADER ERROR")
+		fmt.eprintln("VERTEX SHADER ERROR")
 		return new_shader, -1
 	}
 
 	fragment_code, frag_err := os.read_entire_file_from_filename_or_err(fragment_shader_path^)
 	if frag_err != os.ERROR_NONE {
-		fmt.eprintln("SHADER ERROR")
+		fmt.eprintln("FRAGMENT SHADER ERROR")
 		return new_shader, -1
 	}
 
-	geometry_code: cstring
-	if geometry_shader_path != nil {
-		geometry_string, geo_err := os.read_entire_file_from_filename_or_err(geometry_shader_path^)
-		if geo_err != os.ERROR_NONE {
-			fmt.eprintln("SHADER ERROR")
-			return new_shader, -1
-		}
-
-		geometry_code = convert_to_cstring(geometry_string)
-	}
 
 	vertex_cstring := convert_to_cstring(vertex_code)
-	fragment_cstring := convert_to_cstring(vertex_code)
+	fragment_cstring := convert_to_cstring(fragment_code)
 
-	new_shader = generate_shader(&vertex_cstring, &fragment_cstring, &geometry_code)
+	new_shader = generate_shader(&vertex_cstring, &fragment_cstring)
+
+	return new_shader, 0
+}
+
+load_vert_frag_geo_shader_from_file :: proc(
+	vertex_shader_path: ^string,
+	fragment_shader_path: ^string,
+	geometry_shader_path: ^string,
+) -> (
+	Shader,
+	i32,
+) {
+
+	new_shader: Shader
+
+	vertex_code, vert_err := os.read_entire_file_from_filename_or_err(vertex_shader_path^)
+	if vert_err != os.ERROR_NONE {
+		fmt.eprintln("VERTEX SHADER ERROR")
+		return new_shader, -1
+	}
+
+	fragment_code, frag_err := os.read_entire_file_from_filename_or_err(fragment_shader_path^)
+	if frag_err != os.ERROR_NONE {
+		fmt.eprintln("FRAGMENT SHADER ERROR")
+		return new_shader, -1
+	}
+
+	geometry_code, geo_err := os.read_entire_file_from_filename_or_err(geometry_shader_path^)
+	if geo_err != os.ERROR_NONE {
+		fmt.eprintln("GEOMETRY SHADER ERROR")
+		return new_shader, -1
+	}
+
+
+	vertex_cstring := convert_to_cstring(vertex_code)
+	fragment_cstring := convert_to_cstring(fragment_code)
+	geometry_cstring := convert_to_cstring(geometry_code)
+
+	new_shader = generate_shader(&vertex_cstring, &fragment_cstring, &geometry_cstring)
 
 	return new_shader, 0
 }
@@ -103,6 +147,11 @@ load_shader_from_file :: proc(
 
 load_texture_from_file :: proc(path: string, alpha: bool) -> (Texture2D, i32) {
 	texture: Texture2D
+	texture.wrap_s = gl.REPEAT
+	texture.wrap_t = gl.REPEAT
+	texture.filter_min = gl.LINEAR
+	texture.filter_max = gl.LINEAR
+
 	if (alpha) {
 		texture.internal_format = gl.RGBA
 		texture.image_format = gl.RGBA
@@ -124,6 +173,11 @@ load_texture_from_file :: proc(path: string, alpha: bool) -> (Texture2D, i32) {
 	generate_texture(&texture, width, height, data)
 
 	return texture, 0
+}
+
+load_shader_from_file :: proc {
+	load_vert_frag_geo_shader_from_file,
+	load_vert_frag_shader_from_file,
 }
 
 convert_to_cstring :: proc(str: []u8) -> cstring {
