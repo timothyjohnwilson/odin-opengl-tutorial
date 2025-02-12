@@ -17,10 +17,13 @@ GameState :: enum {
 
 sprite_renderer: SpriteRenderer
 init :: proc(game: Game) {
-
 	vertex_shader := "shaders/sprite.vs"
 	fragment_shader := "shaders/sprite.frag"
 	load_shader(&vertex_shader, &fragment_shader, "sprite")
+
+	shader := get_shader("sprite")
+	use_shader(shader)
+	set_shader_int(shader, "image", 0)
 
 	projection := linalg.matrix_ortho3d_f32(
 		0.0,
@@ -31,15 +34,9 @@ init :: proc(game: Game) {
 		1.0,
 		false,
 	)
-	shader := get_shader("sprite")
-	use_shader(shader)
-	set_shader_int(shader, "image", 0)
 	set_shader_matrix4(shader, "projection", &projection)
 
-	sprite_renderer = {
-		shader   = shader,
-		quad_vao = 0,
-	}
+	sprite_renderer.shader = shader
 	load_texture("textures/awesomeface.png", true, "face")
 	init_render_data(&sprite_renderer)
 }
