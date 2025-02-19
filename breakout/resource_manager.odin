@@ -56,7 +56,7 @@ get_shader :: proc(name: string) -> Shader {
 load_texture :: proc(file: string, alpha: bool, name: string) -> Texture2D {
 	new_texture, error_code := load_texture_from_file(file, alpha)
 	textures[name] = new_texture
-	
+
 	return textures[name]
 }
 
@@ -146,6 +146,12 @@ load_vert_frag_geo_shader_from_file :: proc(
 }
 
 
+load_shader_from_file :: proc {
+	load_vert_frag_geo_shader_from_file,
+	load_vert_frag_shader_from_file,
+}
+
+
 load_texture_from_file :: proc(path: string, alpha: bool) -> (Texture2D, i32) {
 	texture: Texture2D
 	texture.wrap_s = gl.REPEAT
@@ -162,8 +168,8 @@ load_texture_from_file :: proc(path: string, alpha: bool) -> (Texture2D, i32) {
 	width, height, nrChannels: i32
 	data := stbi.load(
 		strings.clone_to_cstring(path),
-		&texture.width,
-		&texture.height,
+		&width,
+		&height,
 		&nrChannels,
 		0,
 	)
@@ -172,15 +178,14 @@ load_texture_from_file :: proc(path: string, alpha: bool) -> (Texture2D, i32) {
 		return texture, -1
 	}
 
+	init_texture(&texture)
 	generate_texture(&texture, width, height, data)
+
+	stbi.image_free(data)
 
 	return texture, 0
 }
 
-load_shader_from_file :: proc {
-	load_vert_frag_geo_shader_from_file,
-	load_vert_frag_shader_from_file,
-}
 
 convert_to_cstring :: proc(str: []u8) -> cstring {
 	return cstring(raw_data(str))

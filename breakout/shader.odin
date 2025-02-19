@@ -114,7 +114,7 @@ check_compile_errors :: proc(object: u32, type: string) {
 		gl.GetShaderiv(object, gl.COMPILE_STATUS, &success)
 		if (!bool(success)) {
 			gl.GetShaderInfoLog(object, 1024, nil, info_log)
-			fmt.print("| ERROR::SHADER: Compile-time error: Type: ")
+			fmt.println("| ERROR::SHADER: Compile-time error: Type: ")
 			fmt.println(type)
 			fmt.println(info_log)
 			fmt.println("\n -- --------------------------------------------------- -- ")

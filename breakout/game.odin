@@ -19,11 +19,7 @@ sprite_renderer: SpriteRenderer
 init :: proc(game: Game) {
 	vertex_shader := "shaders/sprite.vs"
 	fragment_shader := "shaders/sprite.frag"
-	load_shader(&vertex_shader, &fragment_shader, "sprite")
-
-	sprite_renderer.shader = get_shader("sprite")
-	use_shader(sprite_renderer.shader)
-	set_shader_int(sprite_renderer.shader, "image", 0)
+	loaded_shader := load_shader(&vertex_shader, &fragment_shader, "sprite")
 
 	projection := linalg.matrix_ortho3d_f32(
 		0.0,
@@ -34,10 +30,14 @@ init :: proc(game: Game) {
 		1.0,
 		false,
 	)
+
+	sprite_renderer.shader = get_shader("sprite")
+	use_shader(sprite_renderer.shader)
+	set_shader_int(sprite_renderer.shader, "image", 0)
 	set_shader_matrix4(sprite_renderer.shader, "projection", &projection)
+	init_render_data(&sprite_renderer)
 
 	new_texture := load_texture("textures/awesomeface.png", true, "face")
-	init_render_data(&sprite_renderer)
 }
 
 process_input :: proc(dt: f32) {

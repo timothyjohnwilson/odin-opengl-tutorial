@@ -69,6 +69,8 @@ draw_sprite :: proc(
 	model *= linalg.matrix4_translate_f32({-0.5 * size.x, -0.5 * size.y, 0.0})
 	model *= linalg.matrix4_scale_f32({size.x, size.y, 1.0})
 
+	// model := linalg.MATRIX4F32_IDENTITY
+
 	set_shader_matrix4(sprite_renderer.shader, "model", &model)
 	the_color := color
 	set_shader_vector3f(sprite_renderer.shader, "spriteColor", &the_color)
