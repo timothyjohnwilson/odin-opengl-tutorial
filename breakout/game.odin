@@ -21,9 +21,9 @@ init :: proc(game: Game) {
 	fragment_shader := "shaders/sprite.frag"
 	load_shader(&vertex_shader, &fragment_shader, "sprite")
 
-	shader := get_shader("sprite")
-	use_shader(shader)
-	set_shader_int(shader, "image", 0)
+	sprite_renderer.shader = get_shader("sprite")
+	use_shader(sprite_renderer.shader)
+	set_shader_int(sprite_renderer.shader, "image", 0)
 
 	projection := linalg.matrix_ortho3d_f32(
 		0.0,
@@ -34,10 +34,9 @@ init :: proc(game: Game) {
 		1.0,
 		false,
 	)
-	set_shader_matrix4(shader, "projection", &projection)
+	set_shader_matrix4(sprite_renderer.shader, "projection", &projection)
 
-	sprite_renderer.shader = shader
-	load_texture("textures/awesomeface.png", true, "face")
+	new_texture := load_texture("textures/awesomeface.png", true, "face")
 	init_render_data(&sprite_renderer)
 }
 

@@ -3,25 +3,25 @@
     "command": "",
     "args": [],
     "tasks": [
-        // {
-        //     "label": "mkdir",
-        //     "type": "shell",
-        //     "command": "cmd",
-        //     "args": [
-        //         "/C",
-        //         "if not exist .\\build mkdir .\\build"
-        //     ]
-        // },
+        {
+            "label": "mkdir",
+            "type": "shell",
+            "command": "cmd",
+            "args": [
+                "/C",
+                "if not exist .\\breakout/build mkdir .\\breakout/build"
+            ]
+        },
         {
             "label": "build",
             "type": "shell",
-            "command": "cd breakout && odin build . -debug -out:build/debug.exe",
+            "command": "odin build breakout -debug -out:breakout/build/debug.exe",
             "group": "build"
         },
         {
             "label": "Build",
             "dependsOn": [
-                // "mkdir",
+                "mkdir",
                 "build"
             ]
         }

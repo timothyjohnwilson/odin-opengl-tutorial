@@ -56,6 +56,7 @@ get_shader :: proc(name: string) -> Shader {
 load_texture :: proc(file: string, alpha: bool, name: string) -> Texture2D {
 	new_texture, error_code := load_texture_from_file(file, alpha)
 	textures[name] = new_texture
+	
 	return textures[name]
 }
 
@@ -156,6 +157,7 @@ load_texture_from_file :: proc(path: string, alpha: bool) -> (Texture2D, i32) {
 		texture.internal_format = gl.RGBA
 		texture.image_format = gl.RGBA
 	}
+
 
 	width, height, nrChannels: i32
 	data := stbi.load(

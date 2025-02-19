@@ -5,9 +5,7 @@ import "core:strings"
 import gl "vendor:OpenGL"
 
 Shader :: struct {
-	id:              u32,
-	vertex_source:   cstring,
-	fragment_source: cstring,
+	id: u32,
 }
 
 use_shader :: proc(shader: Shader) {
