@@ -36,7 +36,7 @@ main :: proc() {
 		return
 	}
 
-	glfw.SetInputMode(window_handle, glfw.CURSOR, glfw.CURSOR_DISABLED)
+	// glfw.SetInputMode(window_handle, glfw.CURSOR, glfw.CURSOR_DISABLED)
 	glfw.MakeContextCurrent(window_handle)
 	glfw.SwapInterval(0)
 	glfw.SetFramebufferSizeCallback(window_handle, frame_buffer_size_callback)
@@ -48,7 +48,8 @@ main :: proc() {
 
 	glfw.SetKeyCallback(window_handle, key_callback)
 
-	gl.Viewport(0, 0, i32(SCREEN_WIDTH), i32(SCREEN_HEIGHT))
+	width, height := glfw.GetFramebufferSize(window_handle)
+	gl.Viewport(0, 0, width, height)
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 	init(Breakout)
