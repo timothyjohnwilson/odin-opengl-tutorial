@@ -63,7 +63,7 @@ main :: proc() {
 		last_frame = current_frame
 		glfw.PollEvents()
 
-		process_input(f32(delta_time))
+		process_input(&Breakout, f32(delta_time))
 
 		update(f32(delta_time))
 

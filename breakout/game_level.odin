@@ -79,11 +79,11 @@ is_completed :: proc(game_level: ^GameLevel) -> b32 {
 	return true
 }
 
-draw_game_level :: proc(game_level: ^GameLevel, sprite_renderer: ^SpriteRenderer) {
+draw_game_level :: proc(sprite_renderer: ^SpriteRenderer, game_level: ^GameLevel) {
 
 	for brick in game_level.Bricks {
 		if !brick.Destroyed {
-            sprite := brick.Sprite
+			sprite := brick.Sprite
 			draw_sprite(
 				sprite_renderer,
 				&sprite,

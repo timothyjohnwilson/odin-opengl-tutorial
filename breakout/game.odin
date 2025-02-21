@@ -1,6 +1,7 @@
 package main
 import "core:fmt"
 import linalg "core:math/linalg"
+import glfw "vendor:glfw"
 
 Game :: struct {
 	state:  GameState,
@@ -8,7 +9,7 @@ Game :: struct {
 	width:  u32,
 	height: u32,
 	levels: [dynamic]GameLevel,
-	level: i32
+	level:  i32,
 }
 
 GameState :: enum {
@@ -16,6 +17,11 @@ GameState :: enum {
 	GAME_MENU,
 	GAME_WIN,
 }
+
+player_size: [2]f32 = {100.0, 20.0}
+player_velocity: f32 = 500.0
+
+player: GameObject
 
 sprite_renderer: SpriteRenderer
 init :: proc(game: ^Game) {
@@ -41,6 +47,7 @@ init :: proc(game: ^Game) {
 	load_texture("textures/awesomeface.png", true, "face")
 	load_texture("textures/block.png", false, "block")
 	load_texture("textures/block_solid.png", false, "block_solid")
+	load_texture("textures/paddle.png", true, "paddle")
 
 	level_1: GameLevel
 	load_game_level(&level_1, "files/1_level.txt", game.width, game.height / 2)
@@ -53,10 +60,37 @@ init :: proc(game: ^Game) {
 
 	append(&game.levels, level_1, level_2, level_3, level_4)
 	game.level = 0
+
+	player_pos: [2]f32 = {
+		f32((game.width / 2.0)) - f32((player_size.x / 2.0)),
+		f32(game.height) - player_size.y,
+	}
+
+	player_texture := get_texture("paddle")
+	player = init_game_object_args(
+		player_pos,
+		player_size,
+		player_texture,
+		{1.0, 1.0, 1.0},
+		{0.0, 0.0},
+	)
 }
 
-process_input :: proc(dt: f32) {
+process_input :: proc(game: ^Game, dt: f32) {
+	if game.state == GameState.GAME_ACTIVE {
+		velocity := player_velocity * dt
+		if game.keys[glfw.KEY_A] {
+			if player.Position.x >= 0.0 {
+				player.Position.x -= velocity;
+			}
+		}
 
+		if game.keys[glfw.KEY_D] {
+			if player.Position.x <= f32(game.width) - player.Size.x {
+				player.Position.x += velocity
+			}
+		}
+	}
 }
 
 update :: proc(dt: f32) {
@@ -64,10 +98,17 @@ update :: proc(dt: f32) {
 }
 
 render :: proc(game: ^Game) {
-	if(game.state == GameState.GAME_ACTIVE)
-    {
+	if (game.state == GameState.GAME_ACTIVE) {
 		background := get_texture("background")
-		draw_sprite(&sprite_renderer, &background,{0.0, 0.0}, {f32(game.width), f32(game.height)}, 0.0, {1.0, 1.0, 1.0})
-		draw_game_level(&game.levels[game.level], &sprite_renderer)
-    }
+		draw_sprite(
+			&sprite_renderer,
+			&background,
+			{0.0, 0.0},
+			{f32(game.width), f32(game.height)},
+			0.0,
+			{1.0, 1.0, 1.0},
+		)
+		draw_game_level(&sprite_renderer, &game.levels[game.level])
+		draw_game_object(&sprite_renderer, &player)
+	}
 }
