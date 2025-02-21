@@ -48,11 +48,11 @@ main :: proc() {
 
 	glfw.SetKeyCallback(window_handle, key_callback)
 
-	width, height := glfw.GetFramebufferSize(window_handle)
+	width, height := glfw.GetFramebufferSize(window_handle) // GetFramebufferSize helps mitigate MacOS' high dpi screens
 	gl.Viewport(0, 0, width, height)
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-	init(Breakout)
+	init(&Breakout)
 
 	delta_time: f64 = 0.0
 	last_frame: f64 = 0.0
@@ -69,7 +69,7 @@ main :: proc() {
 
 		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
-		render()
+		render(&Breakout)
 
 		glfw.SwapBuffers(window_handle)
 	}

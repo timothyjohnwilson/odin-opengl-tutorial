@@ -7,6 +7,8 @@ Game :: struct {
 	keys:   [1024]b32,
 	width:  u32,
 	height: u32,
+	levels: [dynamic]GameLevel,
+	level: i32
 }
 
 GameState :: enum {
@@ -16,10 +18,8 @@ GameState :: enum {
 }
 
 sprite_renderer: SpriteRenderer
-init :: proc(game: Game) {
-	vertex_shader := "shaders/sprite.vs"
-	fragment_shader := "shaders/sprite.frag"
-	loaded_shader := load_shader(&vertex_shader, &fragment_shader, "sprite")
+init :: proc(game: ^Game) {
+	loaded_shader := load_shader("shaders/sprite.vs", "shaders/sprite.frag", "sprite")
 
 	projection := linalg.matrix_ortho3d_f32(
 		0.0,
@@ -37,7 +37,22 @@ init :: proc(game: Game) {
 	set_shader_matrix4(sprite_renderer.shader, "projection", &projection)
 	init_render_data(&sprite_renderer)
 
-	new_texture := load_texture("textures/awesomeface.png", true, "face")
+	load_texture("textures/background.jpg", false, "background")
+	load_texture("textures/awesomeface.png", true, "face")
+	load_texture("textures/block.png", false, "block")
+	load_texture("textures/block_solid.png", false, "block_solid")
+
+	level_1: GameLevel
+	load_game_level(&level_1, "files/1_level.txt", game.width, game.height / 2)
+	level_2: GameLevel
+	load_game_level(&level_2, "files/2_level.txt", game.width, game.height / 2)
+	level_3: GameLevel
+	load_game_level(&level_3, "files/3_level.txt", game.width, game.height / 2)
+	level_4: GameLevel
+	load_game_level(&level_4, "files/4_level.txt", game.width, game.height / 2)
+
+	append(&game.levels, level_1, level_2, level_3, level_4)
+	game.level = 0
 }
 
 process_input :: proc(dt: f32) {
@@ -48,15 +63,11 @@ update :: proc(dt: f32) {
 
 }
 
-render :: proc() {
-	face_texture := get_texture("face")
-
-	draw_sprite(
-		&sprite_renderer,
-		&face_texture,
-		{200.0, 200.0},
-		{300.0, 400.0},
-		45.0,
-		{0.0, 1.0, 0.0},
-	)
+render :: proc(game: ^Game) {
+	if(game.state == GameState.GAME_ACTIVE)
+    {
+		background := get_texture("background")
+		draw_sprite(&sprite_renderer, &background,{0.0, 0.0}, {f32(game.width), f32(game.height)}, 0.0, {1.0, 1.0, 1.0})
+		draw_game_level(&game.levels[game.level], &sprite_renderer)
+    }
 }
