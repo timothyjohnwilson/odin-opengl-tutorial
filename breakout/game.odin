@@ -113,7 +113,7 @@ process_input :: proc(game: ^Game, dt: f32) {
 }
 
 update :: proc(game: ^Game, dt: f32) {
-	move_ball_object(&ball, dt, game.width)
+	move_ball_object(&ball, &player, dt, game.width)
 }
 
 render :: proc(game: ^Game) {

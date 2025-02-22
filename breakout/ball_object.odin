@@ -44,6 +44,7 @@ init_ball_object :: proc {
 
 move_ball_object :: proc(
 	ball_object: ^BallObject,
+	player: ^GameObject,
 	dt: f32,
 	window_width: u32,
 ) -> [2]f32 {
@@ -62,6 +63,14 @@ move_ball_object :: proc(
 		if (ball_object.position.y <= 0.0) {
 			ball_object.velocity.y = -ball_object.velocity.y
 			ball_object.position.y = 0.0
+		}
+
+		if (ball_object.position.y >= (player.position.y - player.size.y) &&
+			   ball_object.position.y < (player.position.y + player.size.y) &&
+			   ball_object.position.x >= player.position.x &&
+			   ball_object.position.x <= player.position.x + player.size.x) {
+			ball_object.velocity.y = -ball_object.velocity.y
+			ball_object.position.y = player.position.y - player.size.y
 		}
 
 	}
