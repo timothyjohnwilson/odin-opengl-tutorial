@@ -65,7 +65,7 @@ main :: proc() {
 
 		process_input(&Breakout, f32(delta_time))
 
-		update(f32(delta_time))
+		update(&Breakout, f32(delta_time))
 
 		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT)

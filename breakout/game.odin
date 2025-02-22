@@ -21,6 +21,10 @@ GameState :: enum {
 player_size: [2]f32 = {100.0, 20.0}
 player_velocity: f32 = 500.0
 
+initial_ball_velocity: [2]f32 = {100.0, -350.0}
+ball_radius: f32 = 12.5
+ball: BallObject
+
 player: GameObject
 
 sprite_renderer: SpriteRenderer
@@ -74,27 +78,42 @@ init :: proc(game: ^Game) {
 		{1.0, 1.0, 1.0},
 		{0.0, 0.0},
 	)
+
+	ball_pos := player_pos + {player_size.x / 2.0 - ball_radius, -ball_radius * 2.0}
+
+	ball_texture := get_texture("face")
+	ball = init_ball_object(ball_pos, ball_radius, initial_ball_velocity, ball_texture)
 }
 
 process_input :: proc(game: ^Game, dt: f32) {
 	if game.state == GameState.GAME_ACTIVE {
 		velocity := player_velocity * dt
 		if game.keys[glfw.KEY_A] {
-			if player.Position.x >= 0.0 {
-				player.Position.x -= velocity;
+			if player.position.x >= 0.0 {
+				player.position.x -= velocity
+				if (ball.stuck) {
+					ball.position.x -= velocity
+				}
 			}
 		}
 
 		if game.keys[glfw.KEY_D] {
-			if player.Position.x <= f32(game.width) - player.Size.x {
-				player.Position.x += velocity
+			if player.position.x <= f32(game.width) - player.size.x {
+				player.position.x += velocity
+				if (ball.stuck) {
+					ball.position.x += velocity
+				}
 			}
+		}
+
+		if game.keys[glfw.KEY_SPACE] {
+			ball.stuck = false
 		}
 	}
 }
 
-update :: proc(dt: f32) {
-
+update :: proc(game: ^Game, dt: f32) {
+	move_ball_object(&ball, dt, game.width)
 }
 
 render :: proc(game: ^Game) {
@@ -110,5 +129,8 @@ render :: proc(game: ^Game) {
 		)
 		draw_game_level(&sprite_renderer, &game.levels[game.level])
 		draw_game_object(&sprite_renderer, &player)
+
+
+		draw_game_object(&sprite_renderer, &ball)
 	}
 }

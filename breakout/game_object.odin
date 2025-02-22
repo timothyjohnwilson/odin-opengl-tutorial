@@ -1,46 +1,59 @@
 package main
 
 GameObject :: struct {
-    Position: [2]f32,
-    Size: [2]f32,
-    Velocity: [2]f32,
-    Color: [3]f32,
-    Rotation: f32,
-    IsSolid: b32,
-    Destroyed: b32,
-    Sprite: Texture2D
+	position:  [2]f32,
+	size:      [2]f32,
+	velocity:  [2]f32,
+	color:     [3]f32,
+	rotation:  f32,
+	is_solid:  b32,
+	destroyed: b32,
+	sprite:    Texture2D,
 }
 
 init_game_object_blank :: proc() -> GameObject {
-    return {
-        Position = {0.0, 0.0},
-        Size = {1.0, 1.0},
-        Velocity = {0.0, 0.0},
-        Color = {1.0, 1.0, 1.0},
-        Rotation = 0.0,
-        IsSolid = false,
-        Destroyed = false,
-    }
+	return {
+		position = {0.0, 0.0},
+		size = {1.0, 1.0},
+		velocity = {0.0, 0.0},
+		color = {1.0, 1.0, 1.0},
+		rotation = 0.0,
+		is_solid = false,
+		destroyed = false,
+	}
 }
 
-init_game_object_args :: proc(position: [2]f32, size: [2]f32, sprite: Texture2D, color: [3]f32, velocity: [2]f32) -> GameObject {
-    return {
-        Position = position,
-        Size = size,
-        Velocity = velocity,
-        Color = color,
-        Rotation = 0.0,
-        IsSolid = false,
-        Destroyed = false,
-        Sprite = sprite
-    }
+init_game_object_args :: proc(
+	Position: [2]f32,
+	Size: [2]f32,
+	Sprite: Texture2D,
+	Color: [3]f32,
+	Velocity: [2]f32,
+) -> GameObject {
+	return {
+		position = Position,
+		size = Size,
+		velocity = Velocity,
+		color = Color,
+		sprite = Sprite,
+		rotation = 0.0,
+		is_solid = false,
+		destroyed = false,
+	}
 }
 
 init_game_object :: proc {
-    init_game_object_args,
-    init_game_object_blank,
+	init_game_object_args,
+	init_game_object_blank,
 }
 
 draw_game_object :: proc(renderer: ^SpriteRenderer, game_object: ^GameObject) {
-    draw_sprite(renderer, &game_object.Sprite, game_object.Position, game_object.Size, game_object.Rotation, game_object.Color)
+	draw_sprite(
+		renderer,
+		&game_object.sprite,
+		game_object.position,
+		game_object.size,
+		game_object.rotation,
+		game_object.color,
+	)
 }

@@ -28,7 +28,7 @@ init_game_level :: proc(
 				velocity: [2]f32 = {0.0, 0.0}
 				sprite := get_texture("block_solid")
 				game_object := init_game_object(pos, size, sprite, color, velocity)
-				game_object.IsSolid = true
+				game_object.is_solid = true
 				append(&game_level.Bricks, game_object)
 			} else if brick > 1 {
 				color: [3]f32 = {1.0, 1.0, 1.0}
@@ -71,7 +71,7 @@ load_game_level :: proc(
 
 is_completed :: proc(game_level: ^GameLevel) -> b32 {
 	for brick in game_level.Bricks {
-		if !brick.IsSolid && !brick.Destroyed {
+		if !brick.is_solid && !brick.destroyed {
 			return false
 		}
 	}
@@ -82,15 +82,15 @@ is_completed :: proc(game_level: ^GameLevel) -> b32 {
 draw_game_level :: proc(sprite_renderer: ^SpriteRenderer, game_level: ^GameLevel) {
 
 	for brick in game_level.Bricks {
-		if !brick.Destroyed {
-			sprite := brick.Sprite
+		if !brick.destroyed {
+			sprite := brick.sprite
 			draw_sprite(
 				sprite_renderer,
 				&sprite,
-				brick.Position,
-				brick.Size,
-				brick.Rotation,
-				brick.Color,
+				brick.position,
+				brick.size,
+				brick.rotation,
+				brick.color,
 			)
 		}
 	}
