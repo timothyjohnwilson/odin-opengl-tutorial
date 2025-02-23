@@ -132,3 +132,19 @@ render :: proc(game: ^Game) {
 		draw_game_object(&sprite_renderer, &ball)
 	}
 }
+
+
+// AABB - AABB collision
+check_collision :: proc(one: GameObject, two: GameObject) -> b32 {
+	// collision x-axis?
+	collision_x :=
+		one.position.x + one.size.x >= two.position.x &&
+		two.position.x + two.size.x >= one.position.x
+
+	// collision y-axis?
+	collision_y :=
+		one.position.y + one.size.y >= two.position.y &&
+		two.position.y + two.size.y >= one.position.y
+	// collision only if on both axes
+	return collision_x && collision_y
+}
