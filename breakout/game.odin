@@ -129,8 +129,6 @@ render :: proc(game: ^Game) {
 		)
 		draw_game_level(&sprite_renderer, &game.levels[game.level])
 		draw_game_object(&sprite_renderer, &player)
-
-
 		draw_game_object(&sprite_renderer, &ball)
 	}
 }
