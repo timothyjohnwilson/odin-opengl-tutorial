@@ -2,7 +2,7 @@ package main
 import "core:fmt"
 
 GameLevel :: struct {
-	Bricks: [dynamic]GameObject,
+	bricks: [dynamic]GameObject,
 }
 
 init_game_level :: proc(
@@ -29,7 +29,7 @@ init_game_level :: proc(
 				sprite := get_texture("block_solid")
 				game_object := init_game_object(pos, size, sprite, color, velocity)
 				game_object.is_solid = true
-				append(&game_level.Bricks, game_object)
+				append(&game_level.bricks, game_object)
 			} else if brick > 1 {
 				color: [3]f32 = {1.0, 1.0, 1.0}
 				if brick == 2 {
@@ -47,7 +47,7 @@ init_game_level :: proc(
 				sprite := get_texture("block")
 				velocity: [2]f32 = {0.0, 0.0}
 				game_object := init_game_object(pos, size, sprite, color, velocity)
-				append(&game_level.Bricks, game_object)
+				append(&game_level.bricks, game_object)
 			}
 			x_index += 1
 		}
@@ -62,7 +62,7 @@ load_game_level :: proc(
 	level_width: u32,
 	level_height: u32,
 ) {
-	delete(game_level.Bricks)
+	clear_dynamic_array(&game_level.bricks)
 	tile_data, err := load_level_from_file(path)
 	if len(tile_data) > 0 {
 		init_game_level(game_level, tile_data, level_width, level_height)
@@ -70,7 +70,7 @@ load_game_level :: proc(
 }
 
 is_completed :: proc(game_level: ^GameLevel) -> b32 {
-	for brick in game_level.Bricks {
+	for brick in game_level.bricks {
 		if !brick.is_solid && !brick.destroyed {
 			return false
 		}
@@ -81,7 +81,7 @@ is_completed :: proc(game_level: ^GameLevel) -> b32 {
 
 draw_game_level :: proc(sprite_renderer: ^SpriteRenderer, game_level: ^GameLevel) {
 
-	for brick in game_level.Bricks {
+	for brick in game_level.bricks {
 		if !brick.destroyed {
 			sprite := brick.sprite
 			draw_sprite(
